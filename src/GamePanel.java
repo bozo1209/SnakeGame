@@ -21,8 +21,12 @@ public class GamePanel extends JPanel implements ActionListener {
     int appleY;
     char direction = 'R';
     boolean running = false;
+    static boolean pause = false;
+    boolean anti = false;
     Timer timer;
+    MyTimer myTimer;
     Random random;
+
 
     GamePanel(){
         random = new Random();
@@ -36,8 +40,10 @@ public class GamePanel extends JPanel implements ActionListener {
     public void startGame(){
         newApple();
         running = true;
-        timer = new Timer(DELAY, this);
-        timer.start();
+//        timer = new Timer(DELAY, this);
+//        timer.start();
+        myTimer = new MyTimer(DELAY, this);
+        myTimer.start();
     }
 
     public void paintComponent(Graphics g){
@@ -51,23 +57,26 @@ public class GamePanel extends JPanel implements ActionListener {
                 g.drawLine(i * UNIT_SIZE, 0, i * UNIT_SIZE, SCREEN_HEIGHT);
                 g.drawLine(0, i * UNIT_SIZE, SCREEN_WIDTH, i * UNIT_SIZE);
             }
-            g.setColor(Color.RED);
-            g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+
+            Graphics2D g2d = (Graphics2D) g;
+            if (anti){
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            }
+
+
+            g2d.setColor(Color.RED);
+            g2d.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
 
             for (int i = 0; i < bodyParts; i++) {
                 if (i == 0) {
-                    g.setColor(Color.green);
-                    g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+                    g2d.setColor(Color.green);
+                    g2d.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
                 } else {
-                    g.setColor(new Color(45, 180, 0));
-                    g.setColor(new Color(random.nextInt(255), random.nextInt(255), random.nextInt(255)));
-                    g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+                    g2d.setColor(new Color(45, 180, 0));
+                    g2d.setColor(new Color(random.nextInt(255), random.nextInt(255), random.nextInt(255)));
+                    g2d.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
                 }
             }
-//            g.setColor(Color.RED);
-//            g.setFont(new Font("Ink Free", Font.BOLD, 40));
-//            FontMetrics metrics = getFontMetrics(g.getFont());
-//            g.drawString("Score: " + applesEaten, (SCREEN_WIDTH - metrics.stringWidth("Score: " + applesEaten))/2, g.getFont().getSize());
             score(g);
         }else {
             gameOver(g);
@@ -77,8 +86,6 @@ public class GamePanel extends JPanel implements ActionListener {
     public void newApple(){
         appleX = random.nextInt((int) (SCREEN_WIDTH / UNIT_SIZE)) * UNIT_SIZE;
         appleY = random.nextInt((int) (SCREEN_HEIGHT / UNIT_SIZE)) * UNIT_SIZE;
-//        appleX = 0;
-//        appleY = 0;
     }
 
     public void move(){
@@ -131,7 +138,7 @@ public class GamePanel extends JPanel implements ActionListener {
             running = false;
         }
         if (!running){
-            timer.stop();
+            myTimer.stop();
         }
     }
 
@@ -149,6 +156,20 @@ public class GamePanel extends JPanel implements ActionListener {
         FontMetrics metrics = getFontMetrics(g.getFont());
         g.drawString("Score: " + applesEaten, (SCREEN_WIDTH - metrics.stringWidth("Score: " + applesEaten))/2, g.getFont().getSize());
     }
+
+    public void pause(Graphics g){
+        if (!myTimer.hasWorking()){
+            g.setColor(Color.BLUE);
+            g.setFont(new Font("Ink Free", Font.BOLD, 40));
+            FontMetrics metrics = getFontMetrics(g.getFont());
+            g.drawString("Pause", (SCREEN_WIDTH - metrics.stringWidth("Pause"))/2, SCREEN_HEIGHT/2);
+        }
+    }
+
+    public void pause2(){
+
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         if (running){
@@ -183,8 +204,46 @@ public class GamePanel extends JPanel implements ActionListener {
                         direction = 'D';
                     }
                     break;
-
+                case KeyEvent.VK_SPACE:
+                    if (!pause){
+                        pause = true;
+                        myTimer.stop();
+                    }else {
+                        pause = false;
+                        myTimer.start();
+                    }
+                    break;
+                case KeyEvent.VK_A:
+                    if (!anti){
+                        anti = true;
+                    }else {
+                        anti = false;
+                    }
+                    break;
             }
+        }
+    }
+
+    public class MyTimer extends Timer{
+        private boolean isWorking = false;
+        public MyTimer(int delay, ActionListener listener) {
+            super(delay, listener);
+        }
+
+        @Override
+        public void start() {
+            isWorking = true;
+            super.start();
+        }
+
+        @Override
+        public void stop() {
+            isWorking = false;
+            super.stop();
+        }
+
+        public boolean hasWorking(){
+            return this.isWorking;
         }
     }
 }
